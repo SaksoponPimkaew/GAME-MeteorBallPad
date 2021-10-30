@@ -43,8 +43,9 @@ struct block
 	short x=0;
 	short y=0;
 	short hp = 0;
+	short color = 0;
 
-}blocks[200 + specialbox];
+}blocks[300 + specialbox];
 struct bal
 {
 	int x = 0;;
@@ -88,8 +89,8 @@ int main()
 	while (1)
 	{
 		fill_defender_to_console();
+		fill_blocks_to_console();
 		fill_star();
-		
 		fill_buffer_to_console();
 		Sleep(200);
 		clearall_buffer();
@@ -190,9 +191,7 @@ void fill_star() {
 	starbegin += 1;
 	for (int i = 0; i < starcount; i++)
 	{
-		
-		consoleBuffer[stars[i].x+ screen_x * stars[i].y].Char.AsciiChar = '*';
-		consoleBuffer[stars[i].x+ screen_x * stars[i].y].Attributes = 2;
+		write_console(stars[i].x, stars[i].y, 1, '*');
 	}
 }
 void fill_defender_to_console() {
@@ -227,13 +226,14 @@ void fill_defender_to_console() {
 void fill_blocks_to_console() {
 	if (blocksetup==0)
 	{
-		for (int i = 0; i < 200+specialbox; i++)
+		for (int i = 0; i < 300+specialbox; i++)
 		{
-			if (i<200+specialbox)
+			if (i<300+specialbox)
 			{
 				blocks[i].x = rand() % screen_x;
-				blocks[i].y = rand() % screen_x;
+				blocks[i].y =4+ rand() %(screen_y-35);
 				blocks[i].hp = 1 + rand() % 3;
+				blocks[i].color = rand() % 14;
 				for (int j = 0; j < i; j++)
 				{
 					if (blocks[j].x==blocks[i].x)
@@ -247,28 +247,29 @@ void fill_blocks_to_console() {
 				}
 			}
 		}
+		blocksetup = 1;
 	}
-	for (int i = 0; i < 200+specialbox; i++)
+	for (int i = 0; i < 300+specialbox; i++)
 	{
-		if (i<200)
+		if (i<300)
 		{
 			if (blocks[i].hp==3)
 			{
-				write_console(blocks[i].x, blocks[i].y, 4, '~');
+				write_console(blocks[i].x, blocks[i].y, blocks[i].color, '~');
 			}
 			else if (blocks[i].hp == 2)
 			{
-				write_console(blocks[i].x, blocks[i].y, 4, '=');
+				write_console(blocks[i].x, blocks[i].y, blocks[i].color, '=');
 			}
 			else if (blocks[i].hp == 1)
 			{
-				write_console(blocks[i].x, blocks[i].y, 4, '-');
+				write_console(blocks[i].x, blocks[i].y, blocks[i].color, '-');
 			}
 			
 		}
-		if (i>=200)
+		else if (i>=300)
 		{
-
+			write_console(blocks[i].x, blocks[i].y, blocks[i].color+(rand()%240), 'S');
 		}
 	}
 
