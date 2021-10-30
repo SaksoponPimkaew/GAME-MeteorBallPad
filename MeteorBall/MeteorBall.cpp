@@ -64,9 +64,9 @@ struct ship
 
 struct defender
 {
-	int x=1;
-	int y = screen_y - 2;
-	int hp=3;
+	int x;
+	int y ;
+	int hp;
 }defenders[screen_x];
 void setcolor(int fg, int bg);
 void setcursor(bool visible);
@@ -81,12 +81,15 @@ void fill_defender_to_console();
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main()
 {
+
 	setConsole(screen_x, screen_y);
 	setMode();
+	setcursor(0);
 	while (1)
 	{
-		fill_star();
 		fill_defender_to_console();
+		fill_star();
+		
 		fill_buffer_to_console();
 		Sleep(200);
 		clearall_buffer();
@@ -198,22 +201,24 @@ void fill_defender_to_console() {
 		for (int i = 0; i < screen_x; i++)
 		{
 			defenders[i].x = i;
+			defenders[i].y = screen_y-2;
+			defenders[i].hp = 3;
 		}
 		defendersetup++;
 	}
 	for (int i = 0; i < screen_x; i++)
 	{
-		if (defenders[i].hp==3)
+		if (defenders[i].hp==1)
 		{
 			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Char.AsciiChar = '=';
-			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Attributes = 2;
+			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Attributes = 7;
 		}
 		else if (defenders[i].hp == 2)
 		{
 			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Char.AsciiChar = '=';
 			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Attributes = 3;
 		}
-		else if (defenders[i].hp == 1)
+		else 
 		{
 			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Char.AsciiChar = '=';
 			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Attributes = 4;
