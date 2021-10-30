@@ -20,7 +20,7 @@ SMALL_RECT windowSize = { 0,0,screen_x - 1,screen_y - 1 };
 int starbegin = 0;
 
 FILE* mptr;
-int i;
+int i, defendersetup = 0;;
 struct star
 {
 	int x=0;
@@ -37,11 +37,7 @@ struct bullet {
 	int y = 0;
 	bool status = 0;
 }bullets[5];
-struct defender {
-	int x = 0;
-	int y = screen_y - 2;
-	int hp = 3;
-}defenders[screen_x];
+
 struct block
 {
 	int x=0;
@@ -66,6 +62,12 @@ struct ship
 
 }sh[5][5];
 
+struct defender
+{
+	int x=1;
+	int y = screen_y - 2;
+	int hp=3;
+}defenders[screen_x];
 void setcolor(int fg, int bg);
 void setcursor(bool visible);
 int setMode();
@@ -75,6 +77,7 @@ int setConsole(int x, int y);
 void clearall_buffer();
 void fill_star();
 void fill_buffer_to_console();
+void fill_defender_to_console();
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main()
 {
@@ -83,6 +86,7 @@ int main()
 	while (1)
 	{
 		fill_star();
+		fill_defender_to_console();
 		fill_buffer_to_console();
 		Sleep(200);
 		clearall_buffer();
@@ -142,7 +146,7 @@ void clearall_buffer(void) {
 	{
 		for (int j =0; j < screen_y; j++)
 		{
-			consoleBuffer[i+80 * j].Char.AsciiChar = ' ';
+			consoleBuffer[i+ screen_x * j].Char.AsciiChar = ' ';
 			
 		}
 	}
@@ -155,10 +159,10 @@ void fill_star() {
 		{
 			if (stars[i].y>=screen_y-1)
 			{
-				if (cursor(stars[i].x + 80 , stars[i].y)!= '*' )
+				if (cursor(stars[i].x + screen_x , stars[i].y)!= '*' )
 				{
 					
-					stars[i].x = rand()%80;
+					stars[i].x = rand()% screen_x;
 					stars[i].y = 3;
 				}
 				else i--;
@@ -171,7 +175,7 @@ void fill_star() {
 	{
 		for (int i = 0; i < starcount; i++)
 		{
-			if (cursor(stars[i].x + 80, stars[i].y) == '*' || cursor(stars[i].x + 80, stars[i].y + 1) != '*')
+			if (cursor(stars[i].x + screen_x, stars[i].y) == '*' || cursor(stars[i].x + 80, stars[i].y + 1) != '*')
 			{
 				stars[i].x = (rand() % screen_x);
 				stars[i].y = 1 + (rand() % 45);
@@ -184,7 +188,36 @@ void fill_star() {
 	for (int i = 0; i < starcount; i++)
 	{
 		
-		consoleBuffer[stars[i].x+80  * stars[i].y].Char.AsciiChar = '*';
-		consoleBuffer[stars[i].x+80  * stars[i].y].Attributes = 2;
+		consoleBuffer[stars[i].x+ screen_x * stars[i].y].Char.AsciiChar = '*';
+		consoleBuffer[stars[i].x+ screen_x * stars[i].y].Attributes = 2;
 	}
+}
+void fill_defender_to_console() {
+	if (defendersetup==0)
+	{
+		for (int i = 0; i < screen_x; i++)
+		{
+			defenders[i].x = i;
+		}
+		defendersetup++;
+	}
+	for (int i = 0; i < screen_x; i++)
+	{
+		if (defenders[i].hp==3)
+		{
+			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Char.AsciiChar = '=';
+			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Attributes = 2;
+		}
+		else if (defenders[i].hp == 2)
+		{
+			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Char.AsciiChar = '=';
+			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Attributes = 3;
+		}
+		else if (defenders[i].hp == 1)
+		{
+			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Char.AsciiChar = '=';
+			consoleBuffer[defenders[i].x + screen_x * defenders[i].y].Attributes = 4;
+		}
+	}
+
 }
