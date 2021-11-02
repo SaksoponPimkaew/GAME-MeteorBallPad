@@ -145,9 +145,6 @@ int main()
 	}
 	return 0;
 }
-
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void setcolor(int fg, int bg)
 {
@@ -359,8 +356,6 @@ void fill_blocks_to_console() {
 		}
 	}
 
-
-
 }
 void write_console(int x, int y, int color, char ascii) {
 	consoleBuffer[x + screen_x * y].Char.AsciiChar = ascii;
@@ -413,14 +408,8 @@ void nameSetup() {
 		}
 		else printf("%c", name[i]);
 
-
-
-
-
 	}
 	setcursor(0);
-
-
 
 }
 void userinterface() {	
@@ -523,9 +512,6 @@ void userinterface() {
 			if (ch == 's') {
 				nameSetup();
 			}
-			
-
-
 
 			fflush(stdin);
 		}
@@ -693,9 +679,6 @@ void displayscore(int& score) {
 			i = 10;
 		}
 
-
-
-
 	}
 
 	consoleBuffer[73 - timess + screen_x * 0].Attributes = 18;
@@ -738,8 +721,6 @@ void displayname(int timess) {
 		consoleBuffer[70 - strlen(name) - 2 - timess + i + i * 0].Char.AsciiChar = name[i];
 		consoleBuffer[70 - strlen(name) - 2 - timess + i + i * 0].Attributes = 18;
 	}
-
-
 }
 
 void displayHP(int timess) {
@@ -864,7 +845,6 @@ void fill_ship_to_buffer(int posx, int posy)
 		consoleBuffer[sh[2][6].x  + screen_x * sh[2][6].y].Char.AsciiChar = '-';
 		consoleBuffer[sh[2][7].x  + screen_x * sh[2][7].y].Char.AsciiChar = '-';
 		consoleBuffer[sh[2][8].x  + screen_x * sh[2][8].y].Char.AsciiChar = '-';
-
 	}
 	if (lv == 3) {
 		consoleBuffer[sh[3][0].x + screen_x * sh[3][0].y].Char.AsciiChar = '<';
@@ -876,11 +856,8 @@ void fill_ship_to_buffer(int posx, int posy)
 		consoleBuffer[sh[3][6].x  + screen_x * sh[3][6].y].Char.AsciiChar = '^';
 		consoleBuffer[sh[3][7].x  + screen_x * sh[3][7].y].Char.AsciiChar = '-';
 		consoleBuffer[sh[3][8].x  + screen_x * sh[3][8].y].Char.AsciiChar = '>';
-
 	}
-
 }
-
 void ball_move() {
 	for (int t = 0; t < ballcount; t++)
 	{
@@ -983,8 +960,6 @@ void ball_move() {
 		{
 			balls[t].x--;
 		}	
-
-		
 		balls[t].y = balls[t].y + (-1) + (2 * balls[t].ystatus);
 		if (balls[t].x==0 || balls[t].x ==screen_x-1)
 		{
@@ -1002,7 +977,6 @@ void ball_move() {
 			times++;
 			sounds(2);
 		}
-
 		for (int i = 0; i < 5 + (4 * ((lv + 1) / (2 + (lv / 3)))); i++)
 		{
 			if ((lv == 0 && balls[t].ystatus==1) && ((balls[t].x== sh[lv][i].x)&&balls[t].y ==sh[lv][i].y )) {
@@ -1015,14 +989,10 @@ void ball_move() {
 				balls[t].ystatus = (balls[t].ystatus + 1) % 2;
 				sounds(6);
 			}
-			
 		}
 		consoleBuffer[balls[t].x + screen_x * balls[t].y].Char.AsciiChar = 'O';
 		consoleBuffer[balls[t].x + screen_x * balls[t].y].Attributes =r;
 	}
-	
-	
-
 
 
 }
@@ -1033,12 +1003,9 @@ void bullet_move() {
 		{
 			for (int i = 0; i < 300 ; i++)
 			{
-
-
 				if (bullets[j].x == blocks[i].x ) {
 					blocks[i].hp--;
 					score++;
-					
 				}
 				consoleBuffer[bullets[j].x + screen_x * bullets[j].y].Char.AsciiChar = '|';
 				consoleBuffer[bullets[j].x + screen_x * bullets[j].y].Attributes = 79;
@@ -1064,29 +1031,21 @@ void bullet_move() {
 		else if (bullets[j].status == 1 && lv == 2) {
 			for (int i = 0; i < 300; i++)
 			{
-
-
 				if (bullets[j].x == blocks[i].x && bullets[j].y == blocks[i].y) {
 					blocks[i].hp--;
 					score++;
 					sounds(5);
 				}
-				
 				if (bullets[j].y > 3)
-				{
-					
+				{	
 				}
 				else bullets[j].status = 0;
-
 			}
 			consoleBuffer[bullets[j].x + screen_x * bullets[j].y].Char.AsciiChar = '|';
 			consoleBuffer[bullets[j].x + screen_x * bullets[j].y].Attributes = 79;
 			bullets[j].y--;
 		}
 	}
-
-
-
 }
 void sounds(int song) {
 	if (song == 0)
@@ -1130,12 +1089,9 @@ void sounds(int song) {
 	else if (song == 5) {
 		std::thread g06(Beep, 1500, 120);
 		g06.detach();
-
 	}
 	else {
-		std::thread brick(Beep, 400, 50);
-		brick.detach();
+		std::thread brick2(Beep, 400, 50);
+		brick2.detach();
 	}
-
-
 }
