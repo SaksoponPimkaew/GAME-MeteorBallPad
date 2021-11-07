@@ -29,6 +29,7 @@ bool play = 1;
 FILE* mptr;
 int  defendersetup = 0, blocksetup=0;
 char name[14] = "";
+int padhelper[5] = { 1, 1, 1, 1, 1 };
 struct star
 {
 	int x=0;
@@ -75,6 +76,7 @@ struct defender
 	int y ;
 	int hp;
 }defenders[screen_x];
+
 void setcolor(int fg, int bg);
 void setcursor(bool visible);
 int setMode();
@@ -139,7 +141,7 @@ int main()
 			userinterface();
 		}
 		clearall_buffer();
-		Sleep(55 - delay / 100);
+		Sleep(55 - delay / 150);
 		timesx++;
 
 	}
@@ -389,7 +391,7 @@ void nameSetup() {
 	}
 	gotoxy(27, 27);
 	printf("Enter Your Nickname: ");
-	for (int i = 0; i < 12; i++)
+	for (int i = 0; i < 13; i++)
 	{
 		char h = 8;
 		gotoxy(48 + i, 27);
@@ -406,7 +408,7 @@ void nameSetup() {
 			printf(" ");
 			if (i == -2) i = -1;
 		}
-		else printf("%c", name[i]);
+		else { gotoxy(48 + i, 27); printf("%c", name[i]); }
 
 	}
 	setcursor(0);
@@ -558,8 +560,8 @@ void inputUpdate() {
 					lv = (lv + 1) % 4;
 
 				}
-				else if (eventBuffer[i].Event.KeyEvent.uChar.AsciiChar == 'r') {
-					lv = 1;
+				else if (eventBuffer[i].Event.KeyEvent.uChar.AsciiChar == 'z') {
+					r = 1 + rand() % 15;
 					
 
 				}
@@ -612,9 +614,6 @@ void inputUpdate() {
 						bullets[1].x =sh[lv][4].x;
 						bullets[1].y = screen_y - 3 + position;
 						bullets[1].status = 1;
-						
-
-
 
 					}
 
@@ -631,6 +630,7 @@ void inputUpdate() {
 void TOP5() {
 	clearall_buffer();
 	fill_buffer_to_console();
+	setcolor(15, 0);
 	gotoxy(38, 22);
 	printf("TOP 5\n");
 	mptr = fopen("data2.txt", "r");
@@ -710,6 +710,10 @@ void displaybuff(int timess, int& buff) {
 	if (buff == 1 && ballcount == 1)
 	{
 		consoleBuffer[70 - timess + screen_x * 0].Char.AsciiChar = 'N';
+	}
+	if (lv ==3 && ballcount ==3 && power ==3)
+	{
+		consoleBuffer[70 - timess + screen_x * 0].Char.AsciiChar = 'S';
 	}
 	consoleBuffer[70 - timess + screen_x * 0].Attributes = 19+(lv*2)-1+((power)*8);
 
@@ -905,22 +909,22 @@ void ball_move() {
 				score += 500;
 				times = 0;
 				int k = 0;
-				k = rand() % 4;
-				if (k==0)
+				k = rand() % 5;
+				if (k == 0)
 				{
 					times = 0;
 				}
-				else if (k==1)
+				else if (k == 1)
 				{
-					if (lv<3)
+					if (lv < 3)
 					{
 						lv++;
 					}
 					else score += 1500;
 				}
-				else if (k==2)
+				else if (k == 2)
 				{
-					if (power<2)
+					if (power < 2)
 					{
 						power++;
 					}
@@ -929,6 +933,9 @@ void ball_move() {
 				else if (k == 3)
 				{
 					score += 1500;
+				}
+				else if (k == 4) {
+					defendersetup = 0;
 				}
 				blocks[i].hp--;
 			}
