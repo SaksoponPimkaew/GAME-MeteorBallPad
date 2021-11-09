@@ -24,12 +24,15 @@ int power = 0;
 int starbegin = 0, score =0, times =0, timess=0,buff=1,r=2,timesx=0;
 int posx = 0, posy = 0,position=0;
 int lv = 1, balllv = 1, ballcount = 1, bc = 0,delay =0;
+int random=1,randomcharm = 2;
+int lvcache = 0, ballcache = 0,balllvcache =0, delaycache = 0, timescache =0;
 bool play = 1;
 
 FILE* mptr;
 int  defendersetup = 0, blocksetup=0;
 char name[14] = "";
-int padhelper[5] = { 1, 1, 1, 1, 1 };
+int padhelper[5] = { 10, 11, 12, 13, 14 };
+int padhelperstatus = 1;
 struct star
 {
 	int x=0;
@@ -42,7 +45,7 @@ struct player {
 }p[10];
 
 struct bullet {
-	int x = 0;
+	int8_t x = 0;
 	int y = 0;
 	bool status = 0;
 }bullets[5];
@@ -76,7 +79,40 @@ struct defender
 	int y ;
 	int hp;
 }defenders[screen_x];
+struct bigball
+{
+	int x[2] = { 0,1 };
+	int y[2] = { 0,1 };
+	int xstatus = 1;
+	int ystatus = 1;
+	int status = 0;
+}bigballs[3];
+struct angel
+{
+	int x = 10;
+	int y = 5;
+	int status = 0;
 
+}angels;
+struct devil
+{
+	int x=5;
+	int y=5;
+	int hp = 5;
+	int status =0;
+}devils;
+struct item {
+	int x=0;
+	int y=0;
+	int lv = 0;
+}items;
+struct godbullet
+{
+	int x=0;
+	int y=0;
+	int status=0;
+
+}godbullets;
 void setcolor(int fg, int bg);
 void setcursor(bool visible);
 int setMode();
@@ -102,6 +138,10 @@ void fill_ship_to_buffer(int x, int y);
 void ball_move();
 void bullet_move();
 void sounds(int song);
+void summonAD();
+void itemdrop(int angelstatus, int devilstatus);
+void padhelp();
+void bullmove();
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main()
@@ -130,9 +170,13 @@ int main()
 		displayscore(score);
 		fill_ship_to_buffer(posx, screen_y - 3 + position);
 		bullet_move();
+		summonAD();
+		padhelp();
+		itemdrop(angels.status, devils.status);
+		bullmove();
 		fill_buffer_to_console();
 		
-		if (delay <= 3000)
+		if (delay <= 4000)
 		{
 			delay += 1;
 		}
@@ -141,7 +185,7 @@ int main()
 			userinterface();
 		}
 		clearall_buffer();
-		Sleep(55 - delay / 150);
+		Sleep(55 - delay / 200);
 		timesx++;
 
 	}
@@ -865,6 +909,15 @@ void fill_ship_to_buffer(int posx, int posy)
 void ball_move() {
 	for (int t = 0; t < ballcount; t++)
 	{
+		for (int b= 0; b < 5; b++)
+		{
+			if ((balls[t].x == padhelper[b] && balls[t].ystatus==1&& balls[t].y==screen_y-3))
+			{
+				sounds(1);
+				balls[t].xstatus = rand() % 2;
+				balls[t].ystatus = (balls[t].ystatus + 1) % 2;
+			}
+		}
 		for (int i = 0; i < 300+specialbox; i++)
 		{
 
@@ -873,6 +926,7 @@ void ball_move() {
 
 				if (balls[t].x == blocks[i].x && balls[t].y == blocks[i].y)
 				{
+					
 					blocks[i].hp--;
 					score++;
 					sounds(0);
@@ -997,6 +1051,7 @@ void ball_move() {
 				sounds(6);
 			}
 		}
+
 		consoleBuffer[balls[t].x + screen_x * balls[t].y].Char.AsciiChar = 'O';
 		consoleBuffer[balls[t].x + screen_x * balls[t].y].Attributes =r;
 	}
@@ -1008,11 +1063,19 @@ void bullet_move() {
 	{
 		if (bullets[j].status == 1 && lv==3)
 		{
+			
 			for (int i = 0; i < 300 ; i++)
 			{
 				if (bullets[j].x == blocks[i].x ) {
 					blocks[i].hp--;
 					score++;
+				}
+				if (bullets[j].y == devils.y && bullets[j].x == devils.x)
+				{
+					score += 50;
+					sounds(5);
+					score++;
+					devils.hp--;
 				}
 				consoleBuffer[bullets[j].x + screen_x * bullets[j].y].Char.AsciiChar = '|';
 				consoleBuffer[bullets[j].x + screen_x * bullets[j].y].Attributes = 79;
@@ -1036,8 +1099,16 @@ void bullet_move() {
 			bomb3.detach();
 		}
 		else if (bullets[j].status == 1 && lv == 2) {
+			if (bullets[j].y == devils.y && bullets[j].x == devils.x)
+			{
+				score += 50;
+				sounds(5);
+				score++;
+				devils.hp--;
+			}
 			for (int i = 0; i < 300; i++)
 			{
+				
 				if (bullets[j].x == blocks[i].x && bullets[j].y == blocks[i].y) {
 					blocks[i].hp--;
 					score++;
@@ -1097,8 +1168,425 @@ void sounds(int song) {
 		std::thread g06(Beep, 1500, 120);
 		g06.detach();
 	}
+	else if (song == 6) {
+		std::thread g07(Beep, 2000, 120);
+		g07.detach();
+	}
 	else {
 		std::thread brick2(Beep, 400, 50);
 		brick2.detach();
 	}
 }
+void summonAD() {
+	if (timesx%71 == 1&& angels.status==0 && devils.status==0)
+	{
+		random = 1 + (rand() % 8);
+		randomcharm = 1 + (rand() % 2);
+		if (randomcharm == 1)
+		{
+			angels.y = 5 + (rand() % 30);
+			angels.status = 1 + (rand() % 2);
+			if (random>6)
+			{
+				if (lv<3)
+				{
+					lv++;
+				}
+				if (balllv<3)
+				{
+					balllv++;
+				}
+				
+				
+			}
+			else
+			{
+				score += 1000;
+			}
+			ballcache = balllv;
+			lvcache = lv;
+			timescache = times;
+			delaycache = delay;
+		}
+		else {
+			devils.y = 5 + (rand() % 30);
+			devils.status = 1 + (rand() % 2);
+			ballcache = balllv;
+			lvcache = lv;
+			delaycache = delay;
+			timescache = times;
+		}
+		if (angels.status ==1)
+		{
+			angels.x = 2;
+		}
+		else if (angels.status == 2)
+		{
+			angels.x = 75;
+		}
+		
+		if (devils.status==1)
+		{
+			devils.x =2;
+			devils.hp = (timesx / 1000) + 1 + rand() % (5);
+		}
+		else {
+			devils.x = 76;
+			devils.hp = (timesx / 1000) + 1 + rand() % (5);
+		}
+		
+
+	}
+	if (randomcharm == 1)
+	{
+
+		if (angels.status == 1)
+		{
+			if (angels.x >= 0 && angels.x < screen_x)
+			{
+				consoleBuffer[angels.x + screen_x * (angels.y + 1)].Char.AsciiChar = 153;
+				consoleBuffer[angels.x + screen_x * (angels.y + 1)].Attributes = 207;
+				consoleBuffer[angels.x + screen_x * (angels.y + 2)].Char.AsciiChar = 208;
+				consoleBuffer[angels.x + screen_x * (angels.y + 2)].Attributes = 207;
+			}
+			if (angels.x - 1 >= 0 && angels.x - 1 < screen_x)
+			{
+				if (angels.status == 1 && angels.x % 2 == 1)
+				{
+					consoleBuffer[angels.x - 1 + screen_x * (angels.y + 1)].Char.AsciiChar = 184;
+					consoleBuffer[angels.x - 1 + screen_x * (angels.y + 1)].Attributes = 16 + rand() % 200;
+				}
+				else {
+					consoleBuffer[angels.x - 1 + screen_x * (angels.y + 1)].Char.AsciiChar = 170;
+					consoleBuffer[angels.x - 1 + screen_x * (angels.y + 1)].Attributes = 79;
+				}
+			}
+			else if (angels.x - 1 == screen_x)
+			{
+				{
+					angels.status = 0;
+					random = 0;
+					randomcharm = 0;
+					balllv = ballcache;
+					lv = lvcache;
+					delay = delaycache;
+				}
+			} 
+
+			if (timesx % 3 == 0)
+			{
+				angels.x++;
+				if (angels.x % 6 < 3)
+				{
+					angels.y--;
+				}
+				else angels.y++;
+			}
+			
+		}
+		if (angels.status == 2)
+		{
+			if (angels.x >= 0 && angels.x < screen_x)
+			{
+				consoleBuffer[angels.x + screen_x * (angels.y + 1)].Char.AsciiChar = 153;
+				consoleBuffer[angels.x + screen_x * (angels.y + 1)].Attributes = 207;
+				consoleBuffer[angels.x + screen_x * (angels.y + 2)].Char.AsciiChar = 208;
+				consoleBuffer[angels.x + screen_x * (angels.y + 2)].Attributes = 207;
+			}
+			if (angels.x + 1 >= 0 && angels.x < screen_x)
+			{
+				if (angels.x % 2 == 1)
+				{
+					consoleBuffer[angels.x + 1 + screen_x * (angels.y + 1)].Char.AsciiChar = 184;
+					consoleBuffer[angels.x + 1 + screen_x * (angels.y + 1)].Attributes = rand() % 200;
+				}
+				else {
+					consoleBuffer[angels.x + 1 + screen_x * (angels.y + 1)].Char.AsciiChar = 170;
+					consoleBuffer[angels.x + 1 + screen_x * (angels.y + 1)].Attributes = 79;
+				}
+				if (timesx % 3 == 0)
+				{
+					angels.x--;
+					if (angels.x % 6 < 3)
+					{
+						angels.y--;
+					}
+					else angels.y++;
+
+				}
+			}
+			else {
+				angels.status = 0;
+				random = 0;
+				randomcharm = 0;
+				balllv = ballcache;
+				lv = lvcache;
+				delay = delaycache;
+			}
+
+		}
+	}
+
+	if (randomcharm == 2)
+	{
+		if (devils.status ==1 )
+		{
+			if (devils.x >= 1 && devils.x < screen_x-1)
+			{
+				
+				consoleBuffer[devils.x  + screen_x * (devils.y + 1)].Char.AsciiChar = 237;
+				consoleBuffer[devils.x  + screen_x * (devils.y + 1)].Attributes = 79;
+			}
+			if (devils.x - 1 >= 0 && devils.x - 1 < screen_x)
+			{
+				if (devils.x % 2 == 1)
+				{
+					consoleBuffer[devils.x - 1 + screen_x * (devils.y + 1)].Char.AsciiChar = 184;
+					consoleBuffer[devils.x - 1 + screen_x * (devils.y + 1)].Attributes = 79;
+				}
+				else {
+					consoleBuffer[devils.x - 1 + screen_x * (devils.y + 1)].Char.AsciiChar = 170;
+					consoleBuffer[devils.x - 1 + screen_x * (devils.y + 1)].Attributes = 79;
+				}
+			}
+			else {
+				devils.status = 0;
+				random = 0;
+				randomcharm = 0;
+				balllv =ballcache ;
+				lv=lvcache ;
+				delay = delaycache ;
+				times = timescache  ;
+			}
+			if (timesx % 5 == 0)
+			{
+				devils.x++;
+				if (devils.x % 8 < 4)
+				{
+					devils.y--;
+				}
+				else devils.y++;
+				
+			}
+			if (rand() % 8 == 0)
+			{
+				if (score>0)
+				{
+					score--;
+				}
+
+			}
+		}
+		if (devils.status == 2)
+		{
+			if (devils.x+1 >= 1 && devils.x <= screen_x)
+			{
+
+				consoleBuffer[devils.x + screen_x * (devils.y + 1)].Char.AsciiChar = 237;
+				consoleBuffer[devils.x + screen_x * (devils.y + 1)].Attributes = 79;
+			}
+			if (devils.x +1 >= 0 && devils.x  <= screen_x)
+			{
+				if ( devils.x % 2 == 1)
+				{
+					consoleBuffer[devils.x + 1 + screen_x * (devils.y + 1)].Char.AsciiChar = 184;
+					consoleBuffer[devils.x + 1 + screen_x * (devils.y + 1)].Attributes = 79;
+				}
+				else {
+					consoleBuffer[devils.x + 1 + screen_x * (devils.y + 1)].Char.AsciiChar = 170;
+					consoleBuffer[devils.x + 1 + screen_x * (devils.y + 1)].Attributes = 79;
+				}
+			}
+			else {
+				devils.status = 0;
+				random = 0;
+				randomcharm = 0;
+				balllv = ballcache;
+				lv = lvcache;
+				delay = delaycache;
+				times = timescache;
+			}
+			if (timesx % 6 == 0)
+			{
+				devils.x--;
+				if (devils.x % 6 < 3)
+				{
+					devils.y--;
+				}
+				else devils.y++;
+			}
+			if (rand() % 10 == 0)
+			{
+				
+			}
+		}
+		if (devils.hp <= 0)
+		{
+			devils.status = 0;
+			random = 0;
+			randomcharm = 0;
+			balllv = ballcache;
+			lv = lvcache;
+			delay = delaycache;
+			times = timescache;
+			score += 500 + timesx / 2;
+			sounds(2);
+		}
+	}
+	
+}
+void itemdrop(int angelstatus,int devilstatus) {
+	consoleBuffer[67 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 48+randomcharm;
+	consoleBuffer[67 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Attributes = 18;
+	consoleBuffer[66 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 48 + angels.status;
+	consoleBuffer[66 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Attributes = 18;
+	if (angelstatus > 0 && random >0) {
+		if (random <3)
+		{
+			times = 0;
+			consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Char.AsciiChar = '+';
+			consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Attributes = 18;
+		}
+		else if (random <6)
+		{
+			if (delay >10)
+			{
+				delay -= 5;
+				consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Char.AsciiChar = '<';
+				consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Attributes = 18;
+			}
+		}
+		else  if (random>6)
+		{
+			times = 0;
+			balllv = 3;
+			delay = 0;
+			consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 197;
+			consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Attributes = 18;
+
+		}
+
+	}
+	if (devilstatus >0 && random> 0)
+	{
+		
+		if (random < 3)
+		{
+			balllv = 2;
+			if (lv < 2) lv = 2;
+			consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Char.AsciiChar = '!';
+			consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Attributes = 18;
+		}
+		else if (random < 6)
+		{
+			if (godbullets.status == 0)
+			{
+				godbullets.x = devils.x;
+				godbullets.y = devils.y;
+				godbullets.status = 1;
+			}
+			if (lv < 2) lv = 2;
+			if (delay < 3000)
+			{
+				delay += 15;
+				consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Char.AsciiChar = '>';
+				consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Attributes = 18;
+			}
+		}
+		else  if (random > 6)
+		{
+			if (godbullets.status == 0)
+			{
+				godbullets.x = devils.x;
+				godbullets.y = devils.y;
+				godbullets.status = 1;
+			}
+			lv = 2;
+			balllv = 1;
+			if (score>15)
+			{
+				score -= 10;
+			}
+			
+			times = 7;
+			consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Char.AsciiChar ='X';
+			consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Attributes = 18;
+
+		}
+		consoleBuffer[18 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 48 +devils.hp;
+		consoleBuffer[18 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Attributes = 18;
+	}
+}
+void padhelp() {
+	if (padhelper[4] < screen_x-1 && padhelperstatus == 1)
+	{
+			padhelper[0]= padhelper[0]+1;
+			padhelper[1] = padhelper[1] + 1;
+			padhelper[2] = padhelper[2] + 1;
+			padhelper[3] = padhelper[3] + 1;
+			padhelper[4] = padhelper[4] + 1;
+			consoleBuffer[padhelper[0] + screen_x * (screen_y - 3)].Char.AsciiChar = '-';
+			consoleBuffer[padhelper[0] + screen_x * (screen_y - 3)].Attributes = 4;
+			consoleBuffer[padhelper[1] + screen_x * (screen_y - 3)].Char.AsciiChar = '-';
+			consoleBuffer[padhelper[1] + screen_x * (screen_y - 3)].Attributes = 4;
+			consoleBuffer[padhelper[2] + screen_x * (screen_y - 3)].Char.AsciiChar = '-';
+
+			consoleBuffer[padhelper[2] + screen_x * (screen_y - 3)].Attributes = 4;
+			consoleBuffer[padhelper[3] + screen_x * (screen_y - 3)].Char.AsciiChar = '-';
+			consoleBuffer[padhelper[3] + screen_x * (screen_y - 3)].Attributes = 4;
+			consoleBuffer[padhelper[4] + screen_x * (screen_y - 3)].Char.AsciiChar = '-';
+			consoleBuffer[padhelper[4] + screen_x * (screen_y - 3)].Attributes = 4;
+		if (padhelper[4] >= screen_x-1)
+		{
+			padhelperstatus = 0;
+			padhelper[0] = screen_x-5;
+			padhelper[1] = screen_x - 4;
+			padhelper[2] = screen_x - 3;
+			padhelper[3] = screen_x - 2;
+			padhelper[4] = screen_x-1;
+		}
+	}
+	else if (padhelper[0]> 0 && padhelperstatus ==0)
+	{
+		for (int j = 0; j < 5; j++)
+		{
+			padhelper[j]= padhelper[j]-1;
+			consoleBuffer[padhelper[j] + screen_x * (screen_y - 3)].Char.AsciiChar = '-';
+			consoleBuffer[padhelper[j] + screen_x * (screen_y - 3)].Attributes = 4;
+		}
+		if (padhelper[0] <= 0)
+		{
+			padhelperstatus = 1;
+		}
+	}
+
+}
+void bullmove() {
+	if (godbullets.status==1)
+	{
+		if (godbullets.y > 1 && godbullets.y < screen_y-2)
+		{
+			godbullets.y++;
+		}
+		else godbullets.status = 0;
+		if (godbullets.x<posx)
+		{
+			godbullets.x++;
+		}
+		else if (godbullets.x > posx) godbullets.x--;
+		consoleBuffer[godbullets.x + screen_x * godbullets.y].Char.AsciiChar = 207;
+		consoleBuffer[godbullets.x + screen_x * godbullets.y].Attributes = 4;
+		if (godbullets.x ==posx && godbullets.y == screen_y - 3 + position)
+		{
+			times++;
+			sounds(3);
+		}
+	}
+
+
+
+
+}
+
+
+
