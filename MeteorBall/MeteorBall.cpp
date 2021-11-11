@@ -259,7 +259,6 @@ void fill_star() {
 			{
 				if (cursor(stars[i].x + screen_x , stars[i].y)!= '*' )
 				{
-					
 					stars[i].x = rand()% screen_x;
 					stars[i].y = 3+rand()%20;
 				}
