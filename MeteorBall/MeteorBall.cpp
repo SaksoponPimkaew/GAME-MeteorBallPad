@@ -160,7 +160,7 @@ int main()
 
 		inputUpdate();
 		fill_star();
-		ball_move();
+		
 		fill_defender_to_console();
 		fill_blocks_to_console();
 		//inputUpdate();
@@ -174,6 +174,7 @@ int main()
 		padhelp();
 		itemdrop(angels.status, devils.status);
 		bullmove();
+		ball_move();
 		fill_buffer_to_console();
 		
 		if (delay <= 4000)
