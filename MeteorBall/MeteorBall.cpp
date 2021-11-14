@@ -1513,8 +1513,13 @@ void itemdrop(int angelstatus,int devilstatus) {
 			consoleBuffer[68 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Attributes = 18;
 
 		}
-		consoleBuffer[18 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 48 +devils.hp;
-		consoleBuffer[18 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Attributes = 18;
+		consoleBuffer[18 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 'H';
+		consoleBuffer[18 - strlen(name) - 4 - 5 + times / 2 - timess + screen_x * 0].Char.AsciiChar =  'P';
+		consoleBuffer[18 - strlen(name) - 4 - 4 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 48 +devils.hp;
+		consoleBuffer[18 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Attributes = 18;
+		consoleBuffer[18 - strlen(name) - 4 - 5 + times / 2 - timess + screen_x * 0].Attributes = 18;
+		consoleBuffer[18 - strlen(name) - 4 - 4 + times / 2 - timess + screen_x * 0].Attributes = 67;
+
 	}
 }
 void padhelp() {
