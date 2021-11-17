@@ -37,6 +37,8 @@ int  defendersetup = 0, blocksetup=0;
 char name[30] = "";
 int padhelper[5] = { 10, 11, 12, 13, 14 };
 int padhelperstatus = 1;
+bool goStatus = 0;
+int gocolor = 15;
 struct star
 {
 	int x=0;
@@ -705,8 +707,14 @@ void inputUpdate() {
 
 				posx = eventBuffer[i].Event.MouseEvent.dwMousePosition.X;
 				posy = eventBuffer[i].Event.MouseEvent.dwMousePosition.Y;
+				if ((posx > 9 && posx < 22) && (posy > 19 && posy < 24))  goStatus = 1;
+				else goStatus = 0;
 
-				if (eventBuffer[i].Event.MouseEvent.dwButtonState &FROM_LEFT_1ST_BUTTON_PRESSED) {
+				if ((eventBuffer[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)&&sub) {
+					if((posx>9 && posx<22)&&( posy>19 && posy<24))
+					sub = !sub;
+				}
+				else if (eventBuffer[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) {
 					if (position >= -5)
 					{
 						position -= 1;
@@ -1220,6 +1228,15 @@ void bullet_move() {
 				{	
 				}
 				else bullets[j].status = 0;
+			}
+			for (int i = 0; i < (delay / 100); i++)
+			{
+				if (bullets[j].x == stars[i].x) {
+					score += 10;
+					stars[i].x = rand() % screen_x;
+					stars[i].y = 3 + rand() % 20;
+					sounds(3);
+				}
 			}
 			consoleBuffer[bullets[j].x + screen_x * bullets[j].y].Char.AsciiChar = '|';
 			consoleBuffer[bullets[j].x + screen_x * bullets[j].y].Attributes = 79;
@@ -1813,8 +1830,7 @@ void ultimate_burst()
 
 
 }
-bool goStatus = 0;
-int gocolor = 15;
+
 void mainmenu() {
 	int count=0;
 	char pressa[] = { 'P','r','e','s','s', ' ','\'','A','\'', 'F', 'o', 'r',' ', 'T','O','P',' ', '5'};
@@ -1880,7 +1896,19 @@ void mainmenu() {
 				}
 
 			}
-			for (int i = 0; i <11; i++)
+
+			if (goStatus) {
+				int t = 16 + ((rand() % 7) * 16);
+				for (int i = 0; i < 6; i++)
+				{
+					for (int j = 0; j < 13; j++)
+					{
+						consoleBuffer[9+j +screen_x * (19+i)].Char.AsciiChar = 254;
+						consoleBuffer[9+j + screen_x * (19+i)].Attributes =t;
+					}
+				}
+			}
+			for (int i = 0; i < 11; i++)
 			{
 				consoleBuffer[playposition + i + screen_x * 20].Char.AsciiChar = pa[i];
 				consoleBuffer[playposition + i + screen_x * 20].Attributes = gocolor;
@@ -1890,18 +1918,6 @@ void mainmenu() {
 				consoleBuffer[playposition + i + screen_x * 22].Attributes = gocolor;
 				consoleBuffer[playposition + i + screen_x * 23].Char.AsciiChar = ya[i];
 				consoleBuffer[playposition + i + screen_x * 23].Attributes = gocolor;
-			}
-			if (goStatus) {
-				for (int i = 0; i < 7; i++)
-				{
-					for (int j = 0; j < 12; j++)
-					{
-						consoleBuffer[9+j +screen_x * i].Char.AsciiChar = 224;
-						consoleBuffer[9+j + screen_x * i].Attributes = 16+((rand()%7)*8);
-					}
-				}
-			
-			
 			}
 			consoleBuffer[posx + screen_x * posy].Char.AsciiChar = 'O';
 			consoleBuffer[posx + screen_x * posy].Attributes = wavecolor;
