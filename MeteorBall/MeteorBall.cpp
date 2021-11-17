@@ -37,8 +37,9 @@ int  defendersetup = 0, blocksetup=0;
 char name[30] = "";
 int padhelper[5] = { 10, 11, 12, 13, 14 };
 int padhelperstatus = 1;
-bool goStatus = 0;
+bool goStatus = 0, topStatus =0, exitStatus =0;
 int gocolor = 15;
+int namecount = 0,namecolor1=0,namecolor2;
 struct star
 {
 	int x=0;
@@ -475,28 +476,46 @@ void nameSetup() {
 
 		}
 	}
-	gotoxy(27, 27);
-	printf("Enter Your Nickname: ");
-	for (int i = 0; i < 25; i++)
+
+	char entername[] = { 'E','n','t','e','r',' ','Y','o','u','r',' ','N','i','c','k','n','a','m','e',':' };
+	
+
+	for ( namecount = 0; namecount < 25; namecount++)
 	{
+		namecolor1 = 15+(rand() % 7) * 16;
+		gotoxy(48 + (namecount / 2), 27);
+		for (int i = 0; i < 20; i++)
+		{
+			consoleBuffer[27 + i - (namecount / 2) + screen_x * 27].Char.AsciiChar = entername[i];
+			consoleBuffer[27 + i - (namecount / 2) + screen_x * 27].Attributes = namecolor1;
+		}
+		for (int i = 0; i < namecount; i++)
+		{
+			consoleBuffer[48 + i - (namecount / 2) + screen_x * 27].Char.AsciiChar = name[i];
+			consoleBuffer[48 + i - (namecount / 2) + screen_x * 27].Attributes = namecolor1;
+		}
+		fill_buffer_to_console();
 		char h = 8;
-		gotoxy(48 + i, 27);
-		scanf("%c", &name[i]);
-		if (name[i] == ' ' ) {
-			name[i] = '\0';
+		scanf("%c", &name[namecount]);
+		clearall_buffer();
+		if (name[namecount] == ' ' ) {
+			name[namecount] = '\0';
 			gotoxy(24, 30);
 			
 			system("pause");
 			break;
 		}
-		if (name[i] == h && i >= 0) {
-			gotoxy(48 + i-1, 27);
-			i -= 2;
-
+		if (name[namecount] == h && namecount >= 0) {
+			namecount -= 2;
+			if(namecount<=0)
+			namecount = -1;
 			printf(" ");
-			if (i == -2) i = -1;
+			if (namecount == -2) namecount = -1;
 		}
-		else { gotoxy(48 + i, 27); printf("%c", name[i]); }
+		else {
+
+
+		}
 
 	}
 	setcursor(0);
@@ -709,10 +728,19 @@ void inputUpdate() {
 				posy = eventBuffer[i].Event.MouseEvent.dwMousePosition.Y;
 				if ((posx > 9 && posx < 22) && (posy > 19 && posy < 24))  goStatus = 1;
 				else goStatus = 0;
+				if ((posx > 27 && posx < 53) && (posy > 29 && posy < 34))  topStatus = 1;
+				else topStatus = 0;
+				if ((posx > 47 && posx < 72) && (posy > 41 && posy < 47)) exitStatus = 1;
+				else exitStatus = 0;
 
 				if ((eventBuffer[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)&&sub) {
 					if((posx>9 && posx<22)&&( posy>19 && posy<24))
 					sub = !sub;
+					if ((posx > 27 && posx < 53) && (posy > 29 && posy < 34))  TOP5();
+					if ((posx > 47 && posx < 72) && (posy > 41 && posy < 47)) {
+						sub = 0;
+						over = 1;
+					}
 				}
 				else if (eventBuffer[i].Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) {
 					if (position >= -5)
@@ -1844,7 +1872,17 @@ void mainmenu() {
 	int la[] = { 223,' ',220,220,' ',223,' ',' ',223,' ',219 };
 	int aa[] = {223,' ',' ',220,' ' ,223,' ',' ',223,' ',' ' };
 	int ya[] = {223,223 ,223 ,223,' ',223,223 ,223,223,' ',223 };
-	int start = 9, playposition=10,step=0;
+	int to[] = {223,223,223,223,223,' ', 223,223,223,223,' ',223,223,223,' ' ,' ',' ',' ',' ',223,223,223,223 ,' ',219 };
+	int oo[] = {' ',' ',223,' ',' ',' ', 223 , ' ',' ', 223,' ', 219 ,' ',' ',223,' ',' ',' ',' ',223, ' ',' ',' ',' ',219};
+	int po[] = { ' ',' ',223,' ',' ' ,' ', 223, ' ',' ', 223,' ',219,223,223,223,' ',' ',' ',' ',223,223, 223,223, ' ', 219};
+	int fo[] = { ' ',' ',223,' ',' ' ,' ', 223,223,223,223,' ', 219 ,' ',' ',' ',' ',' ',' ',' ',220,220,220,223,' ',220 };
+
+	int ex[] = { 223,223,223,223,223,' ',223,' ',' ',' ',223,' ',' ',223,' ',223,223,223,223,223,223,223,' ',223 };
+	int xx[] = { 223,' ', ' ', ' ', ' ',' ',223,' ',' ',' ',223,' ',' ',' ',' ',' ',' ',' ',223,' ',' ',' ' ,219 };
+	int ix[] = {223,223,223,223,223 ,' ',' ',' ',223,' ',' ',' ',' ',223,' ',' ',' ',' ',223,' ',' ',' ',219 };
+	int tx[] = { 223,' ', ' ', ' ', ' ',' ',' ',223,' ',223,' ',' ',' ',223,' ' ,' ',' ',' ',223,' ',' ',' ',223 };
+	int sx[] = { 223,223,223,223,223 ,' ',223,' ',' ',' ',223,' ',' ',223,' ',' ',' ',' ',223,' ',' ',' ',237 };
+	int start = 9, playposition = 10, step = 0, exitposition = 30;;
 	int meteorColor = 16;
 	setMode();
 	while (sub) {
@@ -1891,10 +1929,7 @@ void mainmenu() {
 				if (i < 18) {
 					consoleBuffer[50 + i + screen_x * 25].Char.AsciiChar = pressa[i];
 					consoleBuffer[50 + i + screen_x * 25].Attributes = wavecolor;
-
-
 				}
-
 			}
 
 			if (goStatus) {
@@ -1905,6 +1940,29 @@ void mainmenu() {
 					{
 						consoleBuffer[9+j +screen_x * (19+i)].Char.AsciiChar = 254;
 						consoleBuffer[9+j + screen_x * (19+i)].Attributes =t;
+					}
+				}
+			}
+			if (topStatus) {
+				int t = 16 + ((rand() % 7) * 16);
+				for (int i = 0; i < 6; i++)
+				{
+					for (int j = 0; j < 27; j++)
+					{
+						consoleBuffer[27 + j + screen_x * (29 + i)].Char.AsciiChar = 254;
+						consoleBuffer[27 + j + screen_x * (29 + i)].Attributes = t;
+					}
+				}
+			}
+
+			if (exitStatus) {
+				int t = 16 + ((rand() % 7) * 16);
+				for (int i = 0; i < 7; i++)
+				{
+					for (int j = 0; j < 27; j++)
+					{
+						consoleBuffer[exitposition+16 + j + screen_x * (41 + i)].Char.AsciiChar = 254;
+						consoleBuffer[exitposition+16 + j + screen_x * (41 + i)].Attributes = t;
 					}
 				}
 			}
@@ -1919,12 +1977,35 @@ void mainmenu() {
 				consoleBuffer[playposition + i + screen_x * 23].Char.AsciiChar = ya[i];
 				consoleBuffer[playposition + i + screen_x * 23].Attributes = gocolor;
 			}
+			for (int i = 0; i < 25; i++)
+			{
+				consoleBuffer[playposition+18 + i + screen_x * 30].Char.AsciiChar = to[i];
+				consoleBuffer[playposition+18 + i + screen_x * 30].Attributes = gocolor;
+				consoleBuffer[playposition + 18 + i + screen_x * 31].Char.AsciiChar = oo[i];
+				consoleBuffer[playposition + 18 + i + screen_x * 31].Attributes = gocolor;
+				consoleBuffer[playposition + 18 + i + screen_x * 32].Char.AsciiChar = po[i];
+				consoleBuffer[playposition + 18 + i + screen_x * 32].Attributes = gocolor;
+				consoleBuffer[playposition + 18 + i + screen_x * 33].Char.AsciiChar = fo[i];
+				consoleBuffer[playposition + 18 + i + screen_x * 33].Attributes = gocolor;
+			}
+			for (int i = 0; i < 23; i++)
+			{
+				consoleBuffer[exitposition + 18 + i + screen_x * 42].Char.AsciiChar = ex[i];
+				consoleBuffer[exitposition + 18 + i + screen_x * 42].Attributes = gocolor;
+				consoleBuffer[exitposition + 18 + i + screen_x * 43].Char.AsciiChar = xx[i];
+				consoleBuffer[exitposition + 18 + i + screen_x * 43].Attributes = gocolor;
+				consoleBuffer[exitposition + 18 + i + screen_x * 44].Char.AsciiChar = ix[i];
+				consoleBuffer[exitposition + 18 + i + screen_x * 44].Attributes = gocolor;
+				consoleBuffer[exitposition + 18 + i + screen_x * 45].Char.AsciiChar = tx[i];
+				consoleBuffer[exitposition + 18 + i + screen_x * 45].Attributes = gocolor;
+				consoleBuffer[exitposition + 18 + i + screen_x * 46].Char.AsciiChar = sx[i];
+				consoleBuffer[exitposition + 18 + i + screen_x * 46].Attributes = gocolor;
+			}
 			consoleBuffer[posx + screen_x * posy].Char.AsciiChar = 'O';
 			consoleBuffer[posx + screen_x * posy].Attributes = wavecolor;
 			fill_star();
 			fill_buffer_to_console();
 			Sleep(50);
-
 			if (count % 250 == 249)
 				ultimate_reset();
 			ultimate_burst();
@@ -1932,7 +2013,6 @@ void mainmenu() {
 			{
 				delay += 1;
 			}
-
 			setMode();
 		} while (sub);
 		reset_blocks();
@@ -1949,10 +2029,8 @@ void mainmenu() {
 		ultimate_reset();
 		defendersetup = 0;
 		random = 0;
+		delay = 0;
 	}
-
-
-
 }
 
 void display_percent() {
