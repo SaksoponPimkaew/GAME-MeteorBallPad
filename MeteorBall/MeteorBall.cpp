@@ -1,12 +1,13 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <stdio.h>
+#include <iostream>
 #include <windows.h>
 #include <time.h>
 #include <conio.h>
 #include <thread>
 #include <mutex>
 #include <string.h>
-
+#include <cwchar>
 constexpr auto screen_x = 80;
 #define screen_y 58
 #define specialbox 5
@@ -26,12 +27,14 @@ int posx = 0, posy = 0,position=0;
 int lv = 1, balllv = 1, ballcount = 1, bc = 0,delay =0;
 int random=1,randomcharm = 2;
 int lvcache = 0, ballcache = 0,balllvcache =0, delaycache = 0, timescache =0;
-bool play = 1;
+bool play = 1, sub = 1, over=0;
 int adjusttime = 0;
-
+int charge =0;
+int displaycolorful = 0;
+int menuposx = 0, menuposy = 0;
 FILE* mptr;
 int  defendersetup = 0, blocksetup=0;
-char name[14] = "";
+char name[30] = "";
 int padhelper[5] = { 10, 11, 12, 13, 14 };
 int padhelperstatus = 1;
 struct star
@@ -152,25 +155,36 @@ void padhelp();
 void bullmove();
 void adjustpow(int &adjusttime);
 void ultimate_power_set();
+void ultimate_reset();
+void ultimate_burst();
+void mainmenu();
+void display_percent();
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main()
 {
 	srand(time(NULL));
+	setcursor(0);
 	setConsole(screen_x, screen_y);
 	//setMode();
 	DWORD numEvents = 0;
 	DWORD numEventsRead = 0;
+	mainmenu();
+	if (over)
+		return 0;
+	clearall_buffer();
+	fill_buffer_to_console();
 	nameSetup();
 	setMode();
 	scoreSetup();
-	setcursor(0);
+
 	while (play)
 	{
 
+		padhelp();
 		inputUpdate();
 		fill_star();
-		
+		display_percent();
 		fill_defender_to_console();
 		fill_blocks_to_console();
 		//inputUpdate();
@@ -181,13 +195,14 @@ int main()
 		fill_ship_to_buffer(posx, screen_y - 3 + position);
 		bullet_move();
 		summonAD();
-		padhelp();
+		
 		itemdrop(angels.status, devils.status);
 		bullmove();
 		ball_move();
 		ultimate_power_set();
 		fill_buffer_to_console();
 		adjustpow(adjusttime);
+ 		ultimate_burst();
 		if (delay <= 4000)
 		{
 			delay += 1;
@@ -196,10 +211,13 @@ int main()
 		{
 			userinterface();
 			reset_blocks();
+			displaycolorful = 0;
 			angels.status = 0;
 			devils.status = 0;
 		}
 		clearall_buffer();
+		if (over)
+			return 0;
 		Sleep(55 - delay / 200);
 		timesx++;
 
@@ -457,12 +475,12 @@ void nameSetup() {
 	}
 	gotoxy(27, 27);
 	printf("Enter Your Nickname: ");
-	for (int i = 0; i < 13; i++)
+	for (int i = 0; i < 25; i++)
 	{
 		char h = 8;
 		gotoxy(48 + i, 27);
 		scanf("%c", &name[i]);
-		if (name[i] == ' ' || name[i] == '\r') {
+		if (name[i] == ' ' ) {
 			name[i] = '\0';
 			gotoxy(24, 30);
 			
@@ -470,7 +488,9 @@ void nameSetup() {
 			break;
 		}
 		if (name[i] == h && i >= 0) {
+			gotoxy(48 + i-1, 27);
 			i -= 2;
+
 			printf(" ");
 			if (i == -2) i = -1;
 		}
@@ -488,10 +508,10 @@ void userinterface() {
 	else setcolor(4, 0);
 	for (int i = 27; i < 51; i++)
 	{
-		for (int j = 24; j < 31; j++)
+		for (int j = 24; j < 32; j++)
 		{
 			gotoxy(i, j);
-			if (j==24 || j==30)
+			if (j==24 || j==31)
 			{
 				printf("=");
 			}
@@ -506,7 +526,7 @@ void userinterface() {
 	{
 		sounds(4);
 		gotoxy(32, 25);
-
+		charge = 0;
 		printf("<<Game Over>>");
 		gotoxy(28, 26);
 		printf("SPACE    >>  Play Again");
@@ -546,9 +566,11 @@ void userinterface() {
 		fclose(mptr);
 		score = 0;
 		delay = 0;
-		lv = 1;
+		lv = 2;
+		power = 0;
 		times = 0;
 		timesx = 0;
+		ultimate_reset();
 		defendersetup = 0;
 		ballcount = 1;
 	}
@@ -561,6 +583,8 @@ void userinterface() {
 	gotoxy(28, 28);
 	printf("S        >>  Rename");
 	gotoxy(28, 29);
+	printf("X        >> MainMenu");
+	gotoxy(28, 30);
 	printf("ESC      >>   Exit");
 	setcursor(0);
 	char ch = 'j';
@@ -580,7 +604,9 @@ void userinterface() {
 			if (ch == 's') {
 				nameSetup();
 			}
-
+			if (ch == 'x')
+				sub = 1; 
+				mainmenu();
 			fflush(stdin);
 		}
 		setMode();
@@ -595,12 +621,17 @@ void inputUpdate() {
 		ReadConsoleInput(rHnd, eventBuffer, numEvents, &numEventsRead);
 		for (DWORD i = 0; i < numEventsRead; ++i) {
 			if (eventBuffer[i].EventType == KEY_EVENT && eventBuffer[i].Event.KeyEvent.bKeyDown == 1) {
-				if (eventBuffer[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE) {
+				if (eventBuffer[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE && sub) {
+					sub = 0;
+					over = 1;
+
+				}
+				else if (eventBuffer[i].Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE) {
 					userinterface();
 				}
 				else if (eventBuffer[i].Event.KeyEvent.uChar.AsciiChar == 'c')
 				{
-					power = (power + 1) % 4;
+					power = (power + 1) % 3;
 				}
 
 				if (eventBuffer[i].Event.KeyEvent.uChar.AsciiChar == 'w') {
@@ -617,6 +648,10 @@ void inputUpdate() {
 					}
 
 				}
+				else if (eventBuffer[i].Event.KeyEvent.uChar.AsciiChar == 'a'&& sub) {
+					TOP5();
+
+				}
 				else if (eventBuffer[i].Event.KeyEvent.uChar.AsciiChar == 'a') {
 					ballcount = 1 + (ballcount) % 3;
 
@@ -628,19 +663,41 @@ void inputUpdate() {
 				}
 				else if (eventBuffer[i].Event.KeyEvent.uChar.AsciiChar == 'z') {
 					r = 1 + rand() % 15;
-					
+
 
 				}
-				else if (eventBuffer[i].Event.KeyEvent.uChar.AsciiChar == 'x') {
-
-					if (delay < 3000)
+				else if ((eventBuffer[i].Event.KeyEvent.uChar.AsciiChar == 'x') && timesx - charge > 750) {
+					ultimate_reset();
+					charge = timesx;
+					displaycolorful = 0;
+				}
+				else if (eventBuffer[i].Event.KeyEvent.uChar.AsciiChar == ' ' && sub)
+					sub = !sub;
+				else if (eventBuffer[i].Event.KeyEvent.uChar.AsciiChar == ' ')
+				{
+					if (position <= -1)
 					{
-						delay = 3000;
+						position += 1;
 
 					}
-					else if (delay >= 3000)
-					{
-						delay = 0;
+					if (lv == 2 && bullets[0].status == 0) {
+
+						bullets[0].x = sh[lv][4].x;
+						bullets[0].y = screen_y - 4 + position;
+						bullets[0].status = 1;
+						std::thread bomb3(Beep, 950, 120);
+						bomb3.detach();
+						std::thread bomb4(Beep, 750, 120);
+						bomb4.detach();
+
+
+					}
+					else if (lv == 3 && bullets[1].status == 0) {
+
+						bullets[1].x = sh[lv][4].x;
+						bullets[1].y = screen_y - 3 + position;
+						bullets[1].status = 1;
+
 					}
 				}
 			}
@@ -706,7 +763,7 @@ void TOP5() {
 	}
 	for (int i = 0; i < 5; i++)
 	{
-		gotoxy(32, 24+2*i);
+		gotoxy(35-strlen(p[i].name)/2, 24+2*i);
 		printf("%s ", p[i].name);
 		printf("%ds ", p[i].times);
 		printf("%d\n", p[i].score);
@@ -777,32 +834,32 @@ void displaybuff(int timess, int& buff) {
 	{
 		consoleBuffer[70 - timess + screen_x * 0].Char.AsciiChar = 'N';
 	}
-	consoleBuffer[70 - timess + screen_x * 0].Attributes = 19 ;
-	consoleBuffer[55-lv + times / 2 - strlen(name) - timess + screen_x * 0].Char.AsciiChar = 'P';
-	consoleBuffer[55-lv + times / 2 - strlen(name) - timess + screen_x * 0].Attributes = 18;
+	consoleBuffer[70 - timess + screen_x * 0].Attributes = 19+((power)*1*(power+2)) ;
+	consoleBuffer[55-lv + (times / 2) - strlen(name) - timess + screen_x * 0].Char.AsciiChar = 'P';
+	consoleBuffer[55-lv +( times / 2) - strlen(name) - timess + screen_x * 0].Attributes = 18;
 	if (lv >= 0)
 	{
 
-		consoleBuffer[50 + 3 - lv + times / 2 - timess + screen_x * 0].Char.AsciiChar = '/';
-		consoleBuffer[50 + 3 - lv + times / 2 - timess + screen_x * 0].Attributes = 18;
+		consoleBuffer[56 - lv + (times / 2) - strlen(name) - timess + screen_x * 0].Char.AsciiChar = '/';
+		consoleBuffer[56 - lv + (times / 2) - strlen(name) - timess + screen_x * 0].Attributes = 18;
 	}
 	if (lv >=1)
 	{
 
-		consoleBuffer[51 + 3 - lv + times / 2 - timess + screen_x * 0].Char.AsciiChar = '/';
-		consoleBuffer[51 + 3 - lv + times / 2 - timess + screen_x * 0].Attributes = 19 ;
+		consoleBuffer[57 - lv + (times / 2) - strlen(name) - timess + screen_x * 0].Char.AsciiChar = '/';
+		consoleBuffer[57 - lv + (times / 2) - strlen(name) - timess + screen_x * 0].Attributes = 19 ;
 	}
 	if (lv>= 2)
 	{
 
-		consoleBuffer[52 + 3 - lv + times / 2 - timess + screen_x * 0].Char.AsciiChar = '/';
-		consoleBuffer[52 + 3 - lv + times / 2 - timess + screen_x * 0].Attributes = 23;
+		consoleBuffer[58 - lv + (times / 2) - strlen(name) - timess + screen_x * 0].Char.AsciiChar = '/';
+		consoleBuffer[58 - lv + (times / 2) - strlen(name) - timess + screen_x * 0].Attributes = 23;
 	}
 	if (lv== 3)
 	{
 
-		consoleBuffer[53 + 3 - lv + times / 2 - timess + screen_x * 0].Char.AsciiChar = '/';
-		consoleBuffer[53 + 3 - lv + times / 2 - timess + screen_x * 0].Attributes = 21;
+		consoleBuffer[59 - lv + (times / 2) - strlen(name) - timess + screen_x * 0].Char.AsciiChar = '/';
+		consoleBuffer[59 - lv + (times / 2) - strlen(name) - timess + screen_x * 0].Attributes = 21;
 	}
 	
 
@@ -1223,7 +1280,7 @@ void sounds(int song) {
 	}
 }
 void summonAD() {
-	if (timesx%71 == 1&& angels.status==0 && devils.status==0)
+	if (timesx%1101 == 1100&& angels.status==0 && devils.status==0)
 	{
 		random = 1 + (rand() % 8);
 		randomcharm = 1 + (rand() % 2);
@@ -1252,6 +1309,7 @@ void summonAD() {
 			lvcache = lv;
 			timescache = times;
 			delaycache = delay;
+			times = 5;
 		}
 		else {
 			devils.y = 5 + (rand() % 30);
@@ -1419,9 +1477,9 @@ void summonAD() {
 			}
 			if (rand() % 8 == 0)
 			{
-				if (score>0)
+				if (score>10)
 				{
-					score--;
+					score-=10;
 				}
 
 			}
@@ -1557,18 +1615,16 @@ void itemdrop(int angelstatus,int devilstatus) {
 			{
 				score -= 10;
 			}
-			
-			times = 7;
 			consoleBuffer[55 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Char.AsciiChar ='X';
 			consoleBuffer[55 - strlen(name) - 4 - 7 + times / 2 - timess + screen_x * 0].Attributes = 18;
 
 		}
-		consoleBuffer[18 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 'H';
-		consoleBuffer[18 - strlen(name) - 4 - 5 + times / 2 - timess + screen_x * 0].Char.AsciiChar =  'P';
-		consoleBuffer[18 - strlen(name) - 4 - 4 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 48 +devils.hp;
-		consoleBuffer[18 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Attributes = 18;
-		consoleBuffer[18 - strlen(name) - 4 - 5 + times / 2 - timess + screen_x * 0].Attributes = 18;
-		consoleBuffer[18 - strlen(name) - 4 - 4 + times / 2 - timess + screen_x * 0].Attributes = 67;
+		consoleBuffer[47 - strlen(name) - 4 - 5 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 'H';
+		consoleBuffer[48 - strlen(name) - 4 - 5 + times / 2 - timess + screen_x * 0].Char.AsciiChar =  'P';
+		consoleBuffer[49 - strlen(name) - 4 - 5 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 48 +devils.hp;
+		consoleBuffer[47 - strlen(name) - 4 - 5 + times / 2 - timess + screen_x * 0].Attributes = 18;
+		consoleBuffer[48 - strlen(name) - 4 - 5 + times / 2 - timess + screen_x * 0].Attributes = 18;
+		consoleBuffer[49 - strlen(name) - 4 - 5 + times / 2 - timess + screen_x * 0].Attributes = 67;
 
 	}
 }
@@ -1646,16 +1702,18 @@ void adjustpow(int &adjusttime) {
 	if (timesx -adjusttime>500&& !devils.status && !angels.status )
 	{
 		adjusttime = timesx;
-		if (lv > 1) lv--;
-		else if (power > 1) power--;
+		
+		if (power >2) power--;
+		else if (lv > 2) { lv--; }
 		else if (balllv > 1) balllv--;
+
 		else if (ballcount > 1) ballcount--;
 
 	}
 
 
 }
-int ultimate_wave = 4, ultimatemove[5] = { 0,0,0,0,0 }, wavecount = 0, wavecolor = 7;
+int  ultimatemove[6] = { 0,0,0,0,0,0 }, wavecount = 0, wavecolor = 7;
 void ultimate_power_set() {
 	for (int r = 0; r <=wavecount; r++)
 	{
@@ -1671,6 +1729,7 @@ void ultimate_power_set() {
 				{
 					consoleBuffer[ultimate[i][r].x + screen_x * ultimate[i][r].y].Char.AsciiChar = 207;
 					consoleBuffer[ultimate[i][r].x + screen_x * ultimate[i][r].y].Attributes = wavecolor;
+					ultimate[i][r].status = 1;
 				}
 				else ultimate[i][r].status = 0;
 				
@@ -1682,6 +1741,7 @@ void ultimate_power_set() {
 				{
 					consoleBuffer[ultimate[i][r].x + screen_x * ultimate[i][r].y].Char.AsciiChar = 207;
 					consoleBuffer[ultimate[i][r].x + screen_x * ultimate[i][r].y].Attributes = wavecolor;
+					ultimate[i][r].status = 1;
 				}
 				else ultimate[i][r].status = 0;
 			}
@@ -1689,20 +1749,222 @@ void ultimate_power_set() {
 		
 
 	}
-	if (wavecount < 5&&ultimatemove[1-1+wavecount]>3)
+	if (wavecount < 5&&ultimatemove[wavecount]>4)
 		wavecount++;
-	else if(wavecount ==5 && ultimatemove[5]==79) wavecount = 0;
+	else if(wavecount ==5 && ultimatemove[4]>=79) 
+		wavecount = 0;
 
 
 }
 void ultimate_reset() {
+	{
+		for (int r = 0; r <6; r++)
+		{
+			for (int i = 0; i < 80; i++)
+			{
+				ultimate[i][r].status = 1;
+
+			}
+			ultimatemove[r] = 0;
+		}
+		wavecount = 0;
+	}
+
+}
+void ultimate_burst() 
+{
 	for (int r = 0; r <5; r++)
 	{
 		for (int i = 0; i < 80; i++)
 		{
-			ultimate[i][r].status = 1;
+			if (ultimate[i][r].status==1)
+			{
+				for (int k = 0; k < (delay / 100); k++)
+				{
+						if (ultimate[i][r].y == stars[k].y) {
+							score += 1;
+							stars[k].x = rand() % screen_x;
+							stars[k].y = 3 + rand() % 10;
+						}
+
+
+				}
+				for (int b = 0; b <300; b++)
+				{
+					if(ultimate[i][r].y ==blocks[b].y)
+						if (ultimate[i][r].x == blocks[b].x&& blocks[b].hp<3)
+						{
+							score += blocks[b].hp;
+							blocks[b].hp = 0;
+						}
+				}
+				if(ultimate[i][r].y==1 && devils.y==1)
+					if (ultimate[i][r].x== devils.x)
+					{
+						if (ultimate[i][r].y == devils.y) {
+							if (devils.hp > 0)
+								devils.hp -= 1;
+						}
+
+					}
+			}
 		}
 	}
+
+
+}
+bool goStatus = 0;
+int gocolor = 15;
+void mainmenu() {
+	int count=0;
+	char pressa[] = { 'P','r','e','s','s', ' ','\'','A','\'', 'F', 'o', 'r',' ', 'T','O','P',' ', '5'};
+	char pressSpace[] = { 'P','r','e','s','s',' ','S','p','a','c','e',' ', 't','o',' ', 'P','l','a','y','!','!' };
+	int first[] = { 223,' ', ' ',' ',' ', 223, ' ',223,223,223,223,' ',' ',223,223,223,223,223, ' ',223,223,223,223,' ',' ',' ',223,223,223,223,223,223,' ',223,223,223,223,223,' ',' ', ' ' ,' ',223,223,223,223,223, ' ',' ', ' ',223,223,223,223, ' ', ' ',223,223,223,223,223,' '};
+	int second[] = { 223,223, ' ',' ',223,223,' ',223, ' ',' ',' ',' ',' ', ' ',' ', 219 ,' ',' ',' ',223, ' ',' ', ' ' ,' ', ' ', ' ',223,' ',' ',' ',' ',223,' ',223,' ',' ',' ',' ',223 ,' ', ' ' ,' ',223,' ',' ',' ',' ',223,' ',223,' ',' ',' ',' ',223,' ',223,' ',' ',' ',' ',223, };
+	int third[] = { 223, ' ', 223,223,' ', 223,' ', 223, 223,223,223,223,' ', ' ',' ', 219 ,' ',' ',' ' , 223, 223,223,223,223, ' ',' ',223,' ',' ',' ',' ',223,' ',223,223,223,223,223,' ',' ', ' ' ,' ',223,223,223,223,223,' ', ' ',223,223,223,223,223,223,' ',223,' ',' ',' ',' ',223, };
+	int fourth[] = { 223,' ',' ',' ',' ',223, ' ', 223,' ', ' ',' ', ' ' ,' ', ' ',' ', 219 ,' ',' ',' ',223, ' ',' ', ' ' ,' ', ' ',' ',223,' ',' ',' ',' ',223,' ',223,' ',' ',' ',223,' ',' ', ' ' ,' ',223,' ',' ',' ',' ', ' ',' ',223,' ',' ',' ',' ',223,' ',223,' ',' ',' ',' ',223, };
+	int fifth[] = { 223,' ',' ',' ',' ',223, ' ', 223,223,223,223,223,223, ' ',' ', 219 ,' ',' ',' ' , 223,223,223,223,223,223, ' ',223,223,223,223,223,223,' ',223,' ',' ',' ',' ',' ',148,' ', ' ' ,223,' ',' ',' ',' ', ' ',' ',223,' ',' ',' ',' ',223, ' ',223,223,223,223,223,' ' };
+	int pa[] = {223,223 ,223,223,' ',223,223 ,223,223,' ',219,' ',219 };
+	int la[] = { 223,' ',220,220,' ',223,' ',' ',223,' ',219 };
+	int aa[] = {223,' ',' ',220,' ' ,223,' ',' ',223,' ',' ' };
+	int ya[] = {223,223 ,223 ,223,' ',223,223 ,223,223,' ',223 };
+	int start = 9, playposition=10,step=0;
+	int meteorColor = 16;
+	setMode();
+	while (sub) {
+		do {
+			count++;
+			padhelp();
+			clearall_buffer();
+			ultimate_power_set();
+			inputUpdate();
+			step = (step + 1) % 144;
+			if (step % 2 == 1) meteorColor = (1 + (rand() % 15));
+			for (int i = 0; i < 62; i++)
+			{
+				
+				if (step < 60 && step != 20 || step>140) {
+					consoleBuffer[start + i + screen_x * 10].Char.AsciiChar = first[i];
+					consoleBuffer[start + i + screen_x * 10].Attributes = meteorColor;
+				}
+				if (step < 70 && step != 20 || step>135) {
+					consoleBuffer[start + i + screen_x * 11].Char.AsciiChar = second[i];
+					consoleBuffer[start + i + screen_x * 11].Attributes = meteorColor;
+				
+				}
+				if (step < 80 && step != 20 || step>130) {
+					consoleBuffer[start + i + screen_x * 12].Char.AsciiChar = third[i];
+					consoleBuffer[start + i + screen_x * 12].Attributes = meteorColor;
+				
+				}
+				if (step < 90 && step != 20 || step>125) {
+					consoleBuffer[start + i + screen_x * 13].Char.AsciiChar = fourth[i];
+					consoleBuffer[start + i + screen_x * 13].Attributes = meteorColor;
+				}
+				
+				if(step <100 && step != 20|| step>120){
+					consoleBuffer[start + i + screen_x * 14].Char.AsciiChar = fifth[i];
+					consoleBuffer[start + i + screen_x * 14].Attributes = meteorColor;
+				}
+				
+			}
+			for (int i = 0; i < 21; i++)
+			{
+				consoleBuffer[50 + i + screen_x * 20].Char.AsciiChar = pressSpace[i];
+				consoleBuffer[50 + i + screen_x * 20].Attributes = wavecolor;
+				if (i < 18) {
+					consoleBuffer[50 + i + screen_x * 25].Char.AsciiChar = pressa[i];
+					consoleBuffer[50 + i + screen_x * 25].Attributes = wavecolor;
+
+
+				}
+
+			}
+			for (int i = 0; i <11; i++)
+			{
+				consoleBuffer[playposition + i + screen_x * 20].Char.AsciiChar = pa[i];
+				consoleBuffer[playposition + i + screen_x * 20].Attributes = gocolor;
+				consoleBuffer[playposition + i + screen_x * 21].Char.AsciiChar = la[i];
+				consoleBuffer[playposition + i + screen_x * 21].Attributes = gocolor;
+				consoleBuffer[playposition + i + screen_x * 22].Char.AsciiChar = aa[i];
+				consoleBuffer[playposition + i + screen_x * 22].Attributes = gocolor;
+				consoleBuffer[playposition + i + screen_x * 23].Char.AsciiChar = ya[i];
+				consoleBuffer[playposition + i + screen_x * 23].Attributes = gocolor;
+			}
+			if (goStatus) {
+				for (int i = 0; i < 7; i++)
+				{
+					for (int j = 0; j < 12; j++)
+					{
+						consoleBuffer[9+j +screen_x * i].Char.AsciiChar = 224;
+						consoleBuffer[9+j + screen_x * i].Attributes = 16+((rand()%7)*8);
+					}
+				}
+			
+			
+			}
+			consoleBuffer[posx + screen_x * posy].Char.AsciiChar = 'O';
+			consoleBuffer[posx + screen_x * posy].Attributes = wavecolor;
+			fill_star();
+			fill_buffer_to_console();
+			Sleep(50);
+
+			if (count % 250 == 249)
+				ultimate_reset();
+			ultimate_burst();
+			if (delay <= 4000)
+			{
+				delay += 1;
+			}
+
+			setMode();
+		} while (sub);
+		reset_blocks();
+		score = 0;
+		timesx = 0;
+		times = 0;
+		lv = 2;
+		ballcount = 1;
+		balllv = 1;
+		power = 0;
+		displaycolorful = 0;
+		angels.status = 0;
+		devils.status = 0;
+		ultimate_reset();
+		defendersetup = 0;
+		random = 0;
+	}
+
+
+
 }
 
+void display_percent() {
+
+	if(timesx - charge >= 750) displaycolorful = ((rand() % 7) * 16);
+	consoleBuffer[41 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 'X';
+
+	consoleBuffer[41 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Attributes = 18+ displaycolorful;
+
+	if (timesx - charge >= 150) {
+		consoleBuffer[42 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 175;
+		consoleBuffer[42 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Attributes = 21 + displaycolorful;
+	}
+	if (timesx - charge >= 300) {
+		consoleBuffer[43 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 175;
+		consoleBuffer[43 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Attributes = 23 + displaycolorful;
+	}
+	if (timesx - charge >= 450) {
+		consoleBuffer[44 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 175;
+		consoleBuffer[44 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Attributes = 18 + displaycolorful;
+	}
+	if (timesx - charge >= 600) {
+		consoleBuffer[45 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 175;
+		consoleBuffer[45 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Attributes = 18 + displaycolorful;
+	}
+	if (timesx - charge >= 750) {
+		consoleBuffer[46 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Char.AsciiChar = 175;
+		consoleBuffer[46 - strlen(name) - 4 - 6 + times / 2 - timess + screen_x * 0].Attributes = 18 + displaycolorful;
+	}
+}
 
