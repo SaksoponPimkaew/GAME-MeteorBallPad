@@ -787,15 +787,32 @@ void inputUpdate() {
 }
 
 void TOP5() {
+	int to[] = { 223,223,223,223,223,' ', 223,223,223,223,' ',223,223,223,' ' ,' ',' ',' ',' ',223,223,223,223 ,' ',219 };
+	int oo[] = { ' ',' ',223,' ',' ',' ', 223 , ' ',' ', 223,' ', 219 ,' ',' ',223,' ',' ',' ',' ',223, ' ',' ',' ',' ',219 };
+	int po[] = { ' ',' ',223,' ',' ' ,' ', 223, ' ',' ', 223,' ',219,223,223,223,' ',' ',' ',' ',223,223, 223,223, ' ', 219 };
+	int fo[] = { ' ',' ',223,' ',' ' ,' ', 223,223,223,223,' ', 219 ,' ',' ',' ',' ',' ',' ',' ',220,220,220,223,' ',220 };
+	int playposition = 12;
 	clearall_buffer();
 	fill_buffer_to_console();
 	setcolor(15, 0);
+	for (int i = 0; i < 25; i++)
+	{
+		consoleBuffer[playposition + 18 + i + screen_x * 18].Char.AsciiChar = to[i];
+		consoleBuffer[playposition + 18 + i + screen_x * 18].Attributes = gocolor;
+		consoleBuffer[playposition + 18 + i + screen_x * 19].Char.AsciiChar = oo[i];
+		consoleBuffer[playposition + 18 + i + screen_x * 19].Attributes = gocolor;
+		consoleBuffer[playposition + 18 + i + screen_x * 20].Char.AsciiChar = po[i];
+		consoleBuffer[playposition + 18 + i + screen_x * 20].Attributes = gocolor;
+		consoleBuffer[playposition + 18 + i + screen_x * 21].Char.AsciiChar = fo[i];
+		consoleBuffer[playposition + 18 + i + screen_x * 21].Attributes = gocolor;
+	}
+	fill_buffer_to_console();
 	gotoxy(38, 22);
-	printf("TOP 5\n");
+	printf("\n");
 	mptr = fopen("data2.txt", "r");
 	for (int i = 0; i < 5; i++)
 	{
-		fscanf(mptr, "%s %d %d\n", &p[i].name, &p[i].times, &p[i].score);
+		fscanf(mptr,"%s %d %d\n", &p[i].name, &p[i].times, &p[i].score);
 	}
 	for (int i = 0; i < 5; i++)
 	{
